@@ -93,10 +93,9 @@ void RoboticArmSimulationApp::mouseDrag(MouseEvent event)
 
 void RoboticArmSimulationApp::update()
 {
-}
+	if (!isValid)
+		return;
 
-void RoboticArmSimulationApp::draw()
-{
 	/* Calculate the absolute origin in pixels respect to world */
 	pOrigin = getWindowCenter();
 
@@ -114,8 +113,7 @@ void RoboticArmSimulationApp::draw()
 	}
 
 	/* Compute angles */
-	if (isValid)
-		computeIK();
+	computeIK();
 
 	cos_theta = cos(theta_rad);
 	sin_theta = sin(theta_rad);
@@ -141,7 +139,10 @@ void RoboticArmSimulationApp::draw()
 	);
 
 	pPointPosition = c_origin + vec2(GRAPH_USIZE * mInputs.arm2_length * cos(theta2_rad + theta_rad), -GRAPH_USIZE * mInputs.arm2_length * sin(theta2_rad + theta_rad));
+}
 
+void RoboticArmSimulationApp::draw()
+{
 	/* Clear screen */
 	gl::clear(Color(1, 1, 1));
 	
