@@ -103,6 +103,10 @@ void RoboticArmSimulationApp::update()
 	uAbsolute = (pMouse - pOrigin);
 	uAbsolute = vec2(uAbsolute.x / GRAPH_USIZE, uAbsolute.y / GRAPH_USIZE);
 
+	/* If point is below the arm base */
+	if ((-uAbsolute.y) < 0)
+		uAbsolute.y = 0;
+
 	// TODO: Clean. 
 	/* If radio is bigger than the maximum reach of the arms */
 	if (sqrt(uAbsolute.x * uAbsolute.x + uAbsolute.y * uAbsolute.y) > (mInputs.arm_length + mInputs.arm2_length)) {
@@ -111,6 +115,9 @@ void RoboticArmSimulationApp::update()
 		float angle = acos(_cos);
 		uAbsolute = vec2(radio * cos(angle), -radio * sin(angle));
 	}
+
+	
+
 
 	/* Compute angles */
 	computeIK();
@@ -199,7 +206,11 @@ float RoboticArmSimulationApp::getTheta2fromXY(float x, float y, float L1, float
 	float d = 2 * L1 * L2;
 	float f = (x * x + y * y) - (L1 * L1 + L2 * L2);
 	float _cos = roundCos(f / d);
-	return acos(_cos);
+
+	if (x < 0)
+		return acos(_cos);
+	else
+		return -acos(_cos);
 }
 
 float RoboticArmSimulationApp::getTheta1fromXY(float x, float y, float L1, float L2, float theta2)
@@ -214,13 +225,27 @@ float RoboticArmSimulationApp::getTheta1fromXY(float x, float y, float L1, float
 	float A = L1 + L2 * cos(theta2);
 	float B = L2 * sin(theta2);
 	float _cos = roundCos((A * x + B * y) / (A * A + B * B));
-	return acos(_cos);
+	float _sin = roundCos((A * y - B * x) / (A * A + B * B));
+
+	float _angle_cos = acos(_cos);
+	float _angle_sin = asin(_sin);
+
+	// TODO: Clean
+	if (_angle_cos < M_PI / 2 && _angle_sin > 0)
+		return _angle_cos;
+	else if (_angle_cos > M_PI / 2 && _angle_sin > 0)
+		return _angle_cos;
+	else if (_angle_cos > M_PI / 2 && _angle_sin < 0)
+		return M_PI - _angle_sin;
+	else
+		return _angle_sin;
+
 }
 
 void RoboticArmSimulationApp::computeIK()
 {
 	// TODO: Consider lower elbow cases and negative angles
-	theta2_rad = -1 * getTheta2fromXY(uAbsolute.x, -uAbsolute.y, mInputs.arm_length, mInputs.arm2_length);
+	theta2_rad = getTheta2fromXY(uAbsolute.x, -uAbsolute.y, mInputs.arm_length, mInputs.arm2_length);
 	theta_rad = getTheta1fromXY(uAbsolute.x, -uAbsolute.y, mInputs.arm_length, mInputs.arm2_length, theta2_rad);
 }
 
